@@ -12,6 +12,7 @@ import org.identifiers.cloud.ws.linkchecker.strategies.LinkCheckerReport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -32,8 +33,14 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class LinkChecker extends Thread {
-    private static final int WAIT_TIME_LIMIT_SECONDS = 30;
-    private static final int WAIT_TIME_POLL_LINK_CHECK_REQUEST_QUEUE_SECONDS = 3;
+
+    @Value("${org.identifiers.cloud.ws.linkchecker.daemon.linkchecker.waittime.max}")
+    private int wait_time_limit_seconds;
+
+    @Value("${org.identifiers.cloud.ws.linkchecker.daemon.linkchecker.waittime.polltimeout}")
+    private int wait_time_poll_link_check_request_queue_seconds;
+
+
     private static final Logger logger = LoggerFactory.getLogger(LinkChecker.class);
 
     private boolean shutdown = false;
@@ -94,7 +101,7 @@ public class LinkChecker extends Thread {
 
     private void randomWait() {
         try {
-            long waitTimeSeconds = random.nextInt(WAIT_TIME_LIMIT_SECONDS);
+            long waitTimeSeconds = random.nextInt(wait_time_limit_seconds);
             logger.info("Random wait {}s", waitTimeSeconds);
             Thread.sleep(waitTimeSeconds * 1000);
         } catch (InterruptedException e) {
@@ -106,7 +113,7 @@ public class LinkChecker extends Thread {
 
     private LinkCheckRequest nextLinkCheckRequest() {
         try {
-            return linkCheckRequestQueue.pollFirst(WAIT_TIME_POLL_LINK_CHECK_REQUEST_QUEUE_SECONDS, TimeUnit.SECONDS);
+            return linkCheckRequestQueue.pollFirst(wait_time_poll_link_check_request_queue_seconds, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             logger.warn("The Link Check Request Queue is unresponsive, operation timed out, {}", e.getMessage());
         }
