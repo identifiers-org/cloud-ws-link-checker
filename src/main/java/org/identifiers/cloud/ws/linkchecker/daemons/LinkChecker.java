@@ -35,10 +35,10 @@ import java.util.concurrent.TimeUnit;
 public class LinkChecker extends Thread {
 
     @Value("${org.identifiers.cloud.ws.linkchecker.daemon.linkchecker.waittime.max}")
-    private int wait_time_limit_seconds;
+    private int waitTimeLimitSecods;
 
     @Value("${org.identifiers.cloud.ws.linkchecker.daemon.linkchecker.waittime.polltimeout}")
-    private int wait_time_poll_link_check_request_queue_seconds;
+    private int waitTimePoolLinkCheckRequestQueueSeconds;
 
 
     private static final Logger logger = LoggerFactory.getLogger(LinkChecker.class);
@@ -101,7 +101,7 @@ public class LinkChecker extends Thread {
 
     private void randomWait() {
         try {
-            long waitTimeSeconds = random.nextInt(wait_time_limit_seconds);
+            long waitTimeSeconds = random.nextInt(waitTimeLimitSecods);
             logger.info("Random wait {}s", waitTimeSeconds);
             Thread.sleep(waitTimeSeconds * 1000);
         } catch (InterruptedException e) {
@@ -113,7 +113,7 @@ public class LinkChecker extends Thread {
 
     private LinkCheckRequest nextLinkCheckRequest() {
         try {
-            return linkCheckRequestQueue.pollFirst(wait_time_poll_link_check_request_queue_seconds, TimeUnit.SECONDS);
+            return linkCheckRequestQueue.pollFirst(waitTimePoolLinkCheckRequestQueueSeconds, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             logger.warn("The Link Check Request Queue is unresponsive, operation timed out, {}", e.getMessage());
         }
