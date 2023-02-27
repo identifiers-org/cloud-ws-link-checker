@@ -19,7 +19,7 @@ import java.util.Calendar;
 
 @ControllerAdvice
 public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
-    private static final Logger logger = LoggerFactory.getLogger(PeriodicCheckRequesterResolutionBaseData.class);
+    private static final Logger logger = LoggerFactory.getLogger(RestResponseEntityExceptionHandler.class);
 
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     private static final String now() {
