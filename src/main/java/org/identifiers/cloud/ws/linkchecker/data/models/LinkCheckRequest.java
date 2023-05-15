@@ -22,6 +22,16 @@ public class LinkCheckRequest implements Serializable, Comparable<LinkCheckReque
     // Link check request type / reference
     private String providerId;
     private String resourceId;
+    private boolean accept401or403 = false;
+
+    public boolean shouldAccept401or403() {
+        return accept401or403;
+    }
+
+    public LinkCheckRequest setAccept401or403(boolean accept401or403) {
+        this.accept401or403 = accept401or403;
+        return this;
+    }
 
     public String getUrl() {
         return url;

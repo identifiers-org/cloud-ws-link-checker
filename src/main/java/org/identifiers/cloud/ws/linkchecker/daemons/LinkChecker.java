@@ -64,7 +64,7 @@ public class LinkChecker extends Thread {
         LinkCheckerReport linkCheckerReport;
         try {
             logger.info("Attending link check request for URL '{}'", linkCheckRequest.getUrl());
-            linkCheckerReport = linkCheckingStrategy.check(linkCheckRequest.getUrl());
+            linkCheckerReport = linkCheckingStrategy.check(linkCheckRequest.getUrl(), linkCheckRequest.shouldAccept401or403());
         } catch (LinkCheckerException e) {
             logger.error("Could not attend link checking request for URL '{}', reason '{}'", linkCheckRequest.getUrl()
                     , e.getMessage());

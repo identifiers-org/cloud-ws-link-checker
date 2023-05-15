@@ -101,7 +101,9 @@ public class PeriodicCheckRequesterResolutionBaseData extends Thread {
                     // TODO - Have a look at the data types for refactoring
                     linkCheckRequestQueue.add(new LinkCheckRequest()
                             .setUrl(resolvedResource.getCompactIdentifierResolvedUrl())
-                            .setResourceId(Long.toString(resolvedResource.getId())));
+                            .setResourceId(Long.toString(resolvedResource.getId()))
+                            .setAccept401or403(resolvedResource.isProtectedUrls()));
+                            // TODO - Should be fixed after updating libapi
                     // Create link checking requests for home URLs (a.k.a. providers)
                     // NOTE - This implementation assumes that every provider in the resolution dataset has a different
                     // ID depending on the namespace context where it's providing an access URL, the provider home URL
