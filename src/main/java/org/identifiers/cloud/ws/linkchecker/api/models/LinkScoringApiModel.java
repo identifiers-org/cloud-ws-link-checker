@@ -56,9 +56,10 @@ public class LinkScoringApiModel {
      * @return a Service Response ready for the controller to send back to the client
      */
     public ServiceResponseScoringRequest getScoreForProvider(ServiceRequestScoreProvider request) {
-        logger.info("Provider scoring request for ID '{}', URL '{}'",
+        logger.info("Provider scoring request for ID '{}', URL '{}', accept401or403? '{}'",
                 request.getPayload().getId(),
-                request.getPayload().getUrl());
+                request.getPayload().getUrl(),
+                request.getPayload().getAccept401or403() ? "Yes" : "No");
         ServiceResponseScoringRequest response = getDefaultResponse();
         try {
             response.getPayload()
@@ -84,9 +85,10 @@ public class LinkScoringApiModel {
      * @return a Service Response ready for the controller to send back to the client
      */
     public ServiceResponseScoringRequest getScoreForResolvedId(ServiceRequestScoreResource request) {
-        logger.info("Resource scoring request for ID '{}', URL '{}'",
+        logger.info("Resource scoring request for ID '{}', URL '{}', accept401or403? '{}'",
                 request.getPayload().getId(),
-                request.getPayload().getUrl());
+                request.getPayload().getUrl(),
+                request.getPayload().getAccept401or403() ? "Yes" : "No");
         ServiceResponseScoringRequest response = getDefaultResponse();
         try {
             response.getPayload().setScore((int) Math.round(historyTrackingService.getTrackerForResource(request

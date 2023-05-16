@@ -2,7 +2,6 @@ package org.identifiers.cloud.ws.linkchecker.api.controllers;
 
 import org.identifiers.cloud.ws.linkchecker.api.ApiCentral;
 import org.identifiers.cloud.ws.linkchecker.api.responses.ServiceResponse;
-import org.identifiers.cloud.ws.linkchecker.daemons.PeriodicCheckRequesterResolutionBaseData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;

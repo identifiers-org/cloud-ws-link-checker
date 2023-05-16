@@ -237,7 +237,8 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
     public ResourceTracker getTrackerForResource(ScoringRequestWithIdPayload scoringRequestWithIdPayload) throws HistoryTrackingServiceException {
         linkCheckRequestQueue.add(new LinkCheckRequest()
                 .setResourceId(scoringRequestWithIdPayload.getId())
-                .setUrl(scoringRequestWithIdPayload.getUrl()));
+                .setUrl(scoringRequestWithIdPayload.getUrl())
+                .setAccept401or403(scoringRequestWithIdPayload.getAccept401or403()));
         try {
             return resources.get(scoringRequestWithIdPayload.getId(), new Callable<ResourceTracker>() {
                 @Override
@@ -253,9 +254,10 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
             });
         } catch (ExecutionException e) {
             throw new SimpleHistoryTrackingServiceException(String.format("Error while getting scoring stats " +
-                            "for Resource ID '%s', URL '%s', because '%s'",
+                            "for Resource ID '%s', URL '%s', accept401or403? '%s', because '%s'",
                     scoringRequestWithIdPayload.getId(),
                     scoringRequestWithIdPayload.getUrl(),
+                    scoringRequestWithIdPayload.getAccept401or403() ? "Yes" : "No",
                     e.getMessage()));
         }
     }
