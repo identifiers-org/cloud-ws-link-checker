@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Random;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -64,10 +66,11 @@ public class LinkChecker extends Thread {
         LinkCheckerReport linkCheckerReport;
         try {
             logger.info("Attending link check request for URL '{}'", linkCheckRequest.getUrl());
-            linkCheckerReport = linkCheckingStrategy.check(linkCheckRequest.getUrl(), linkCheckRequest.shouldAccept401or403());
-        } catch (LinkCheckerException e) {
-            logger.error("Could not attend link checking request for URL '{}', reason '{}'", linkCheckRequest.getUrl()
-                    , e.getMessage());
+            URL linkCheckRequestUrl = new URL(linkCheckRequest.getUrl());
+            linkCheckerReport = linkCheckingStrategy.check(linkCheckRequestUrl, linkCheckRequest.shouldAccept401or403());
+        } catch (LinkCheckerException | MalformedURLException e) {
+            logger.error("Could not attend link checking request for URL '{}'", linkCheckRequest.getUrl());
+            logger.error("Exception thrown", e);
             return null;
         }
         // Log the results

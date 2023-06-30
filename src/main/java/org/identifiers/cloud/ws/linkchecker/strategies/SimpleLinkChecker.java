@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.sql.Timestamp;
@@ -31,16 +30,10 @@ public class SimpleLinkChecker implements LinkChecker {
     private static final int READ_TIMEOUT_SECONDS = 12;
 
     @Override
-    public LinkCheckerReport check(String url, boolean accept401or403) {
+    public LinkCheckerReport check(URL checkingUrl, boolean accept401or403) {
         LinkCheckerReport report = new LinkCheckerReport()
-                .setUrl(url)
+                .setUrl(checkingUrl.toString())
                 .setTimestamp(new Timestamp(System.currentTimeMillis()));
-        URL checkingUrl = null;
-        try {
-            checkingUrl = new URL(url);
-        } catch (MalformedURLException e) {
-            throw new SimpleLinkCheckerException(e.getMessage());
-        }
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) checkingUrl.openConnection();
@@ -58,35 +51,34 @@ public class SimpleLinkChecker implements LinkChecker {
         connection.setReadTimeout(READ_TIMEOUT_SECONDS * 1000);
         connection.setInstanceFollowRedirects(true);
         try {
-            // TODO - This the operations that blocks
             report.setHttpStatus(connection.getResponseCode());
         } catch (IOException e) {
-            throw new SimpleLinkCheckerException(String.format("IO Exception when checking '%s', reason '%s'", url, e.getMessage()));
+            throw new SimpleLinkCheckerException(String.format("IO Exception when checking '%s', reason '%s'", checkingUrl, e.getMessage()));
         } finally {
             connection.disconnect();
         }
         // We accept HTTP OK, although this is the place where the NLP based prototype from Paris Biohackathon should
         // improve the link checker accuracy
         HttpStatus responseStatus = HttpStatus.valueOf(report.getHttpStatus());
-        if (responseStatus.is2xxSuccessful() || responseStatus.is3xxRedirection()) {
+        if (responseStatus.is2xxSuccessful()) {
             report.setUrlAssessmentOk(true);
-            logger.info(String.format("[HTTP %d] ACCEPTED AS OK For URL %s",
-                    report.getHttpStatus(), report.getUrl()));
+            logger.info("[HTTP {}] ACCEPTED AS OK For URL {}",
+                    report.getHttpStatus(), report.getUrl());
         } else if (responseStatus.is3xxRedirection()) {
             report.setUrlAssessmentOk(true);
-            logger.info(String.format("[HTTP %d] REDIRECT ACCEPTED AS OK For URL %s",
-                    report.getHttpStatus(), report.getUrl()));
+            logger.info("[HTTP {}] REDIRECT ACCEPTED AS OK For URL {}",
+                    report.getHttpStatus(), report.getUrl());
         } else if (
                 (responseStatus == HttpStatus.FORBIDDEN || responseStatus == HttpStatus.UNAUTHORIZED)
                         && accept401or403
         ) {
             report.setUrlAssessmentOk(true);
-            logger.info(String.format("[HTTP %d] AUTH RESPONSE ACCEPTED AS OK For PROTECTED URL %s",
-                    report.getHttpStatus(), report.getUrl()));
+            logger.info("[HTTP {}] AUTH RESPONSE ACCEPTED AS OK For PROTECTED URL {}",
+                    report.getHttpStatus(), report.getUrl());
         } else {
             report.setUrlAssessmentOk(false);
-            logger.info(String.format("[HTTP %d] NOT ACCEPTED AS OK For URL %s",
-                    report.getHttpStatus(), report.getUrl()));
+            logger.info("[HTTP {}] NOT ACCEPTED AS OK For URL {}",
+                    report.getHttpStatus(), report.getUrl());
         }
         return report;
     }

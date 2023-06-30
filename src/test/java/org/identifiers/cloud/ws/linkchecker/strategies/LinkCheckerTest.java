@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 /**
  * Project: link-checker
  * Package: org.identifiers.cloud.ws.linkchecker.strategies
@@ -27,8 +30,8 @@ public class LinkCheckerTest {
     private LinkChecker linkChecker;
 
     @Test
-    public void reportOverviewTest() {
-        LinkCheckerReport report = linkChecker.check("http://www.ebi.ac.uk/chebi/", false);
+    public void reportOverviewTest() throws MalformedURLException {
+        LinkCheckerReport report = linkChecker.check(new URL("https://www.ebi.ac.uk/chebi/"), false);
         // Just checking how the report looks like
         ObjectMapper mapper = new ObjectMapper();
         try {

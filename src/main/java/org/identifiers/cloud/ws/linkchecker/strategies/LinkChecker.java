@@ -1,5 +1,7 @@
 package org.identifiers.cloud.ws.linkchecker.strategies;
 
+import java.net.URL;
+
 /**
  * Project: link-checker
  * Package: org.identifiers.cloud.ws.linkchecker.strategies
@@ -11,5 +13,5 @@ package org.identifiers.cloud.ws.linkchecker.strategies;
  * This is the interface of Link Checking strategies
  */
 public interface LinkChecker {
-    LinkCheckerReport check(String url, boolean accept401or403) throws LinkCheckerException;
+    LinkCheckerReport check(URL url, boolean accept401or403) throws LinkCheckerException;
 }
