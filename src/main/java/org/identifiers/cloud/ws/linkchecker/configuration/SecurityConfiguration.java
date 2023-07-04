@@ -10,7 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 
 @Configuration
 @EnableWebSecurity
-@Profile("!development")
+@Profile("authenabled")
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Value("${org.identifiers.cloud.ws.linkchecker.requiredrole}")
     String requiredRole; // Assumed that user gets role directly
