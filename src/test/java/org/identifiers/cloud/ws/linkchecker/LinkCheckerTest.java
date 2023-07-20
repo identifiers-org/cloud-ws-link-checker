@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {EmbeddedRedditTestConfiguration.class})
-@ActiveProfiles("development")
+@ActiveProfiles("authdisabled")
 public class LinkCheckerTest {
 
     @Autowired
