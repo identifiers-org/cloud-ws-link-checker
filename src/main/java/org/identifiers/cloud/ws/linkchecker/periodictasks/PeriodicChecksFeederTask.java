@@ -27,17 +27,17 @@ import java.util.concurrent.BlockingDeque;
  * resources and providers.
  */
 @Component
-@ConditionalOnProperty(value = "org.identifiers.cloud.ws.linkchecker.daemon.periodiclinkcheckrequester.enabled")
+@ConditionalOnProperty(value = "org.identifiers.cloud.ws.linkchecker.daemon.periodicchecksfeedertask.enabled")
 public class PeriodicChecksFeederTask implements Runnable{
     static final Logger logger = LoggerFactory.getLogger(PeriodicChecksFeederTask.class);
     static final Random random = new Random(System.currentTimeMillis());
 
 
-    @Value("${org.identifiers.cloud.ws.linkchecker.daemon.periodiclinkcheckrequester.waittime.max:24h}")
+    @Value("${org.identifiers.cloud.ws.linkchecker.daemon.periodicchecksfeedertask.waittime.max:24h}")
     Duration waitTimeMaxBeforeNextRequest;
-    @Value("${org.identifiers.cloud.ws.linkchecker.daemon.periodiclinkcheckrequester.waittime.min:12h}")
+    @Value("${org.identifiers.cloud.ws.linkchecker.daemon.periodicchecksfeedertask.waittime.min:12h}")
     Duration waitTimeMinBeforeNextRequest;
-    @Value("${org.identifiers.cloud.ws.linkchecker.daemon.periodiclinkcheckrequester.waittime.error:1h}")
+    @Value("${org.identifiers.cloud.ws.linkchecker.daemon.periodicchecksfeedertask.waittime.error:1h}")
     Duration waitTimeErrorBeforeNextRequest;
 
 
@@ -65,7 +65,7 @@ public class PeriodicChecksFeederTask implements Runnable{
         // Get Resolution client and insight data on resolution samples, as they also contain the provider home URL,
         // we'll only need one request.
         ServiceResponseResolve insightResponse = resolverService.getAllSampleIdsResolved();
-        if (insightResponse.getHttpStatus() == HttpStatus.OK) {
+        if (insightResponse.getHttpStatus().is2xxSuccessful()) {
             logger.info("Queuing link check requests for #{} entries from the Resolution insight API",
                     insightResponse.getPayload().getResolvedResources().size());
             insightResponse.getPayload().getResolvedResources()
@@ -76,17 +76,10 @@ public class PeriodicChecksFeederTask implements Runnable{
                         .setResourceId(Long.toString(resolvedResource.getId()))
                         .setAccept401or403(resolvedResource.isProtectedUrls()));
 
-                // Create link checking requests for home URLs (a.k.a. providers)
-                // NOTE - This implementation assumes that every provider in the resolution dataset has a different
-                // ID depending on the namespace context where it's providing an access URL, the provider home URL
-                // may be the same for different namespaces where this provider is a resource, but the provider ID
-                // will be different, and stats are collected by provider ID, not by the URL of the provider. This
-                // is done this way to scope the statistical information about a provider within a particular
-                // namespace. This way, more complex scoring can be calculated by combining metrics related to the
-                // same provider / resource ID, i.e. scoped by the namespace where the provider is a resource.
                 linkCheckRequestQueue.add(new LinkCheckRequest()
                         .setUrl(resolvedResource.getResourceHomeUrl())
-                        .setProviderId(Long.toString(resolvedResource.getId())));
+                        .setProviderId(Long.toString(resolvedResource.getId()))
+                        .setAccept401or403(false));
             });
         } else {
             logger.error("Got HTTP Status '{}' from Resolution Service Insight API, reason '{}', " +
