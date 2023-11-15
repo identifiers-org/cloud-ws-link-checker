@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
+
+import java.time.Duration;
 
 /**
  * Project: link-checker
@@ -24,12 +26,12 @@ public class LinkCheckResultConfig {
 
     public static Long timeToLive = 10L;
 
-    @Value("${org.identifiers.cloud.ws.linkchecker.backend.data.linkcheckresults.ttl.seconds}")
-    private Long timeToLiveParam;
+    @Value("${org.identifiers.cloud.ws.linkchecker.backend.data.linkcheckresults.ttl}")
+    Duration timeToLiveParam;
 
     @PostConstruct
     private void init() {
         logger.info("Setting link check results Time To Live value to {} seconds", timeToLiveParam);
-        timeToLive = timeToLiveParam;
+        timeToLive = timeToLiveParam.getSeconds();
     }
 }

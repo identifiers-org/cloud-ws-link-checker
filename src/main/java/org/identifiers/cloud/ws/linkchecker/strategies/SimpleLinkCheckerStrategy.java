@@ -3,15 +3,16 @@ package org.identifiers.cloud.ws.linkchecker.strategies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Scope;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.net.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.sql.Timestamp;
-import java.time.Instant;
 
 /**
  * Project: link-checker
@@ -25,12 +26,14 @@ import java.time.Instant;
  */
 @Component
 @Scope("prototype")
-public class SimpleLinkChecker implements LinkChecker {
-    private static final Logger logger = LoggerFactory.getLogger(SimpleLinkChecker.class);
+public class SimpleLinkCheckerStrategy implements LinkCheckerStrategy {
+    private static final Logger logger = LoggerFactory.getLogger(SimpleLinkCheckerStrategy.class);
 
-    @Autowired
-    @Qualifier("linkCheckerRestTemplate")
-    RestTemplate restTemplate;
+
+    final HttpClient linkCheckerHttpClient;
+    SimpleLinkCheckerStrategy(@Autowired HttpClient linkCheckerHttpClient) {
+        this.linkCheckerHttpClient = linkCheckerHttpClient;
+    }
 
     @Override
     public LinkCheckerReport check(URL checkingUrl, boolean accept401or403) {
@@ -38,11 +41,25 @@ public class SimpleLinkChecker implements LinkChecker {
                 .setUrl(checkingUrl.toString())
                 .setTimestamp(new Timestamp(System.currentTimeMillis()));
 
-        ResponseEntity<Object> response = restTemplate.exchange(checkingUrl.toString(),
-                HttpMethod.HEAD, null, Object.class);
-        report.setHttpStatus(response.getStatusCodeValue());
+        URI uri = URI.create(checkingUrl.toString());
+        HttpRequest request = HttpRequest.newBuilder()
+                .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                .uri(uri).build();
+        HttpResponse<?> response;
+        try {
+            response = linkCheckerHttpClient.send(request, HttpResponse.BodyHandlers.discarding());
+        } catch (IOException | InterruptedException e) {
+            report.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            report.setUrlAssessmentOk(false);
+            logger.info("[HTTP NaN] Exception when checking {}", report.getUrl());
+            logger.info("             message {}", e.getMessage());
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            return report;
+        }
 
-        HttpStatus responseStatus = response.getStatusCode();
+        report.setHttpStatus(response.statusCode());
+
+        HttpStatus responseStatus = HttpStatus.valueOf(response.statusCode());
         if (responseStatus.is2xxSuccessful()) {
             report.setUrlAssessmentOk(true);
             logger.info("[HTTP {}] ACCEPTED AS OK For URL {}",

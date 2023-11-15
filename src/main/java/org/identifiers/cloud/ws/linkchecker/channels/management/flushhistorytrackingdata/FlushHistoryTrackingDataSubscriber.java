@@ -8,7 +8,7 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Project: link-checker
@@ -20,14 +20,18 @@ import javax.annotation.PostConstruct;
  */
 @Component
 public class FlushHistoryTrackingDataSubscriber extends Subscriber<String, FlushHistoryTrackingDataMessage> {
-    @Autowired
-    private RedisMessageListenerContainer redisContainer;
+    private final RedisMessageListenerContainer redisContainer;
+    private final ChannelTopic channelTopicFlushHistoryTrackingData;
+    private final RedisTemplate<String, FlushHistoryTrackingDataMessage> flushHistoryTrackingDataMessageRedisTemplate;
 
-    @Autowired
-    private ChannelTopic channelTopicFlushHistoryTrackingData;
-
-    @Autowired
-    private RedisTemplate<String, FlushHistoryTrackingDataMessage> flushHistoryTrackingDataMessageRedisTemplate;
+    public FlushHistoryTrackingDataSubscriber(
+            @Autowired RedisMessageListenerContainer redisContainer,
+            @Autowired ChannelTopic channelTopicFlushHistoryTrackingData,
+            @Autowired RedisTemplate<String, FlushHistoryTrackingDataMessage> flushHistoryTrackingDataMessageRedisTemplate) {
+        this.redisContainer = redisContainer;
+        this.channelTopicFlushHistoryTrackingData = channelTopicFlushHistoryTrackingData;
+        this.flushHistoryTrackingDataMessageRedisTemplate = flushHistoryTrackingDataMessageRedisTemplate;
+    }
 
     @PostConstruct
     public void registerSubscriber() {

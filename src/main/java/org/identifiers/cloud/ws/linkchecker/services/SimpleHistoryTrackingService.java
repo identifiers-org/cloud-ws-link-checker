@@ -2,7 +2,6 @@ package org.identifiers.cloud.ws.linkchecker.services;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import org.identifiers.cloud.ws.linkchecker.api.requests.ScoringRequestWithIdPayload;
 import org.identifiers.cloud.ws.linkchecker.channels.PublisherException;
@@ -20,11 +19,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
+
+import java.time.Duration;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -43,11 +43,11 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
     private Cache<String, ProviderTracker> providers;
     private Cache<String, ResourceTracker> resources;
 
-    @Value("${org.identifiers.cloud.ws.linkchecker.backend.data.cache.expiry.seconds}")
-    private long cacheExpirySeconds;
+    @Value("${org.identifiers.cloud.ws.linkchecker.backend.data.cache.expiry}")
+    Duration cacheExpiry;
 
     @Value("${org.identifiers.cloud.ws.linkchecker.backend.data.cache.size}")
-    private long cacheSize;
+    long cacheSize;
 
     // Repositories
     // TODO - Refactor out these repositories to services in the future (when possible), in the meantime, I will use
@@ -75,23 +75,13 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
         logger.info("Simple History Tracking Service - Cache SIZE = {}", cacheSize);
         providers = CacheBuilder.newBuilder()
                 .maximumSize(cacheSize)
-                .expireAfterWrite(cacheExpirySeconds, TimeUnit.SECONDS)
-                .removalListener(new RemovalListener<String, ProviderTracker>() {
-                    @Override
-                    public void onRemoval(RemovalNotification<String, ProviderTracker> removalNotification) {
-                        processProviderEviction(removalNotification);
-                    }
-                })
+                .expireAfterWrite(cacheExpiry.getSeconds(), TimeUnit.SECONDS)
+                .removalListener(this::processProviderEviction)
                 .build();
         resources = CacheBuilder.newBuilder()
                 .maximumSize(cacheSize)
-                .expireAfterWrite(cacheExpirySeconds, TimeUnit.SECONDS)
-                .removalListener(new RemovalListener<String, ResourceTracker>() {
-                    @Override
-                    public void onRemoval(RemovalNotification<String, ResourceTracker> removalNotification) {
-                        processResourceEviction(removalNotification);
-                    }
-                })
+                .expireAfterWrite(cacheExpiry.getSeconds(), TimeUnit.SECONDS)
+                .removalListener(this::processResourceEviction)
                 .build();
     }
 
@@ -128,7 +118,7 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
         Optional<TrackedProvider> trackedProvider =
                 trackedProviderRepository.findById(scoringRequestWithIdPayload.getId());
         trackedProvider.ifPresent(entry -> providerTracker.setCreated(entry.getCreated()));
-        if (!trackedProvider.isPresent()) {
+        if (trackedProvider.isEmpty()) {
             TrackedProvider newTrackedProvider = new TrackedProvider()
                     .setCreated(providerTracker.getCreated())
                     .setId(providerTracker.getId())
@@ -150,7 +140,7 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
         Optional<TrackedResource> trackedResource =
                 trackedResourceRepository.findById(scoringRequestWithIdPayload.getId());
         trackedResource.ifPresent(entry -> resourceTracker.setCreated(entry.getCreated()));
-        if (!trackedResource.isPresent()) {
+        if (trackedResource.isEmpty()) {
             TrackedResource newTrackedResource = new TrackedResource()
                     .setCreated(resourceTracker.getCreated())
                     .setId(resourceTracker.getId())
@@ -211,18 +201,15 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
             HistoryTrackingServiceException {
         // TODO - Queue the provider scoring requests
         try {
-            return providers.get(scoringRequestWithIdPayload.getId(), new Callable<ProviderTracker>() {
-                @Override
-                public ProviderTracker call() throws Exception {
-                    ProviderTracker providerTracker = loadCreateTrackedProvider(scoringRequestWithIdPayload);
-                    // Initialize the stats for the given provider
-                    List<LinkCheckResult> linkCheckResults = linkCheckResultsService.findByProviderId
-                            (scoringRequestWithIdPayload.getId());
-                    if (linkCheckResults != null) {
-                        providerTracker.initHistoryStats(linkCheckResults);
-                    }
-                    return providerTracker;
+            return providers.get(scoringRequestWithIdPayload.getId(), () -> {
+                ProviderTracker providerTracker = loadCreateTrackedProvider(scoringRequestWithIdPayload);
+                // Initialize the stats for the given provider
+                List<LinkCheckResult> linkCheckResults = linkCheckResultsService.findByProviderId
+                        (scoringRequestWithIdPayload.getId());
+                if (linkCheckResults != null) {
+                    providerTracker.initHistoryStats(linkCheckResults);
                 }
+                return providerTracker;
             });
         } catch (ExecutionException e) {
             throw new SimpleHistoryTrackingServiceException(String.format("Error while getting scoring stats " +
@@ -240,17 +227,14 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
                 .setUrl(scoringRequestWithIdPayload.getUrl())
                 .setAccept401or403(scoringRequestWithIdPayload.getAccept401or403()));
         try {
-            return resources.get(scoringRequestWithIdPayload.getId(), new Callable<ResourceTracker>() {
-                @Override
-                public ResourceTracker call() throws Exception {
-                    ResourceTracker resourceTracker = loadCreateTrackedResource(scoringRequestWithIdPayload);
-                    // Initialize stats for the given resource
-                    List<LinkCheckResult> linkCheckResults = linkCheckResultsService.findByResourceId(scoringRequestWithIdPayload.getId());
-                    if (linkCheckResults != null) {
-                        resourceTracker.initHistoryStats(linkCheckResults);
-                    }
-                    return resourceTracker;
+            return resources.get(scoringRequestWithIdPayload.getId(), () -> {
+                ResourceTracker resourceTracker = loadCreateTrackedResource(scoringRequestWithIdPayload);
+                // Initialize stats for the given resource
+                List<LinkCheckResult> linkCheckResults = linkCheckResultsService.findByResourceId(scoringRequestWithIdPayload.getId());
+                if (linkCheckResults != null) {
+                    resourceTracker.initHistoryStats(linkCheckResults);
                 }
+                return resourceTracker;
             });
         } catch (ExecutionException e) {
             throw new SimpleHistoryTrackingServiceException(String.format("Error while getting scoring stats " +
@@ -283,12 +267,16 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
             linkCheckResultsService.deleteAll();
             logger.warn("ALL LINK CHECKING HISTORICAL DATA HAS BEEN WIPED OUT as requested");
         } catch (RuntimeException e) {
-            throw new HistoryTrackingServiceException(String.format("History tracker could not delete the historical data, due to '{}'", e.getMessage()));
+            throw new HistoryTrackingServiceException(String.format(
+                    "History tracker could not delete the historical data, due to '%s'",
+                    e.getMessage()));
         }
         try {
             flushHistoryTrackingDataPublisher.publish(new FlushHistoryTrackingDataMessage());
         } catch (PublisherException e) {
-            throw new HistoryTrackingServiceException(String.format("History tracker could not announce the request to delete the historical data, due to '{}'", e.getMessage()));
+            throw new HistoryTrackingServiceException(String.format(
+                    "History tracker could not announce the request to delete the historical data, due to '%s'",
+                    e.getMessage()));
         }
     }
 
@@ -300,7 +288,9 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
             resources.invalidateAll();
             logger.warn("ALL cached stats for resources have been WIPED OUT as requested");
         } catch (RuntimeException e) {
-            throw new HistoryTrackingServiceException(String.format("History tracker could not flush history trackers, due to '{}'", e.getMessage()));
+            throw new HistoryTrackingServiceException(String.format(
+                    "History tracker could not flush history trackers, due to '%s'",
+                    e.getMessage()));
         }
     }
 }

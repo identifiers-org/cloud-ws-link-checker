@@ -27,8 +27,6 @@ public class ManagementApiController {
 
     @RequestMapping("flushLinkCheckingHistory")
     public ResponseEntity<?> flushLinkCheckingHistory() {
-        //ServiceResponseScoringRequest response = model.getScoreForUrl(request);
-        //return new ResponseEntity<>(response, response.getHttpStatus());
         ServiceResponseManagementRequest response = model.flushLinkCheckingHistory();
         return new ResponseEntity<>(response, response.getHttpStatus());
     }

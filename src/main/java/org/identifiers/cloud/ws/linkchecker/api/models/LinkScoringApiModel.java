@@ -64,7 +64,7 @@ public class LinkScoringApiModel {
         try {
             response.getPayload()
                     .setScore((int) Math.round(historyTrackingService.getTrackerForProvider(request.getPayload())
-                            .getHistoryStats(HistoryTracker.HistoryStats.SIMPLE).getUpPercenetage()));
+                            .getHistoryStats(HistoryTracker.HistoryStats.SIMPLE).getUpPercentage()));
         } catch (Exception e) {
             response.setErrorMessage(String.format("Scoring could not be calculated due to '%s'", e.getMessage()));
             response.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -78,7 +78,7 @@ public class LinkScoringApiModel {
     }
 
     /**
-     * Get the realiability score for a resource (within the context of a particular namespace), the calculation is
+     * Get the reliability score for a resource (within the context of a particular namespace), the calculation is
      * based on the seen 'uptime' history of that resource, i.e. how many times the resource was up over the total
      * number of times we have checked its status.
      * @param request the request that contains the reference to the resource being scored
@@ -92,7 +92,7 @@ public class LinkScoringApiModel {
         ServiceResponseScoringRequest response = getDefaultResponse();
         try {
             response.getPayload().setScore((int) Math.round(historyTrackingService.getTrackerForResource(request
-                    .getPayload()).getHistoryStats(HistoryTracker.HistoryStats.SIMPLE).getUpPercenetage()));
+                    .getPayload()).getHistoryStats(HistoryTracker.HistoryStats.SIMPLE).getUpPercentage()));
         } catch (Exception e) {
             response.setErrorMessage(String.format("Scoring could not be calculated due to '%s'", e.getMessage()));
             response.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);

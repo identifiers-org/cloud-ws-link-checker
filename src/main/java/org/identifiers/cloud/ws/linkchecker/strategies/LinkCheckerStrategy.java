@@ -12,6 +12,6 @@ import java.net.URL;
  *
  * This is the interface of Link Checking strategies
  */
-public interface LinkChecker {
+public interface LinkCheckerStrategy {
     LinkCheckerReport check(URL url, boolean accept401or403) throws LinkCheckerException;
 }

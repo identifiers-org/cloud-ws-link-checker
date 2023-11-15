@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Project: link-checker
@@ -33,7 +33,7 @@ public class LinkCheckResultListener implements Listener<LinkCheckResult> {
 
     @PostConstruct
     private void init() {
-        logger.info("Adding linck check results listener to the channel subscriber");
+        logger.info("Adding link check results listener to the channel subscriber");
         subscriber.addListener(this);
     }
 

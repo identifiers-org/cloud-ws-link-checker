@@ -21,7 +21,7 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
     private static final Logger logger = LoggerFactory.getLogger(RestResponseEntityExceptionHandler.class);
 
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-    private static final String now() {
+    private static String now() {
         // Date for easier finding related entries in log files
         Calendar cal = Calendar.getInstance();
         return sdf.format(cal.getTime());
@@ -32,7 +32,7 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
         // Last hope for logging of unforeseen errors
         // Also a way to make all responses to be of type ServiceResponse
         logger.error("Unforeseen exception", ex);
-        ServiceResponse responseBody = new ServiceResponse()
+        ServiceResponse<?> responseBody = new ServiceResponse<>()
                 .setApiVersion(ApiCentral.apiVersion)
                 .setErrorMessage(String.format("Unforeseen exception at %s: %s", now(), ex.getMessage()));
         return handleExceptionInternal(ex, responseBody, new HttpHeaders(),

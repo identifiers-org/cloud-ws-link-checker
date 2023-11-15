@@ -7,7 +7,7 @@
 - Ok, so my plans on using a few redis hashes via spring data redis are wrong.
     - Create a LinkCheckRequest that contains all the information present in a resolved resource, it needs to say whether a plain URL, a resolution or a provider is being requested.
     - Refactor CheckedUrl to LinkCheckResult, it doesn't need to contain anything else than the ID of either the resource (for a resolution URL check), the provider (for a home URL check) or none of them, for just a plain URL check.
-        - It will be stored in a redishash ('linkCheckerLinkCheckResult'), and indexed by several fields, e.g. url, resource id, provider id, timestamp, etc.
+        - It will be stored in a redis hash ('linkCheckerLinkCheckResult'), and indexed by several fields, e.g. url, resource id, provider id, timestamp, etc.
     - Create a redis hash for a provider (home url tracking)
     - Create a redis hash for a resource (cid resolution, a.k.a. resolved resource, tracking)
     - Create a redis hash for tracking of plain URLs

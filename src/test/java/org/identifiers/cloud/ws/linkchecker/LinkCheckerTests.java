@@ -1,13 +1,12 @@
 package org.identifiers.cloud.ws.linkchecker;
 
-import org.identifiers.cloud.ws.linkchecker.strategies.LinkChecker;
+import org.identifiers.cloud.ws.linkchecker.strategies.LinkCheckerStrategy;
 import org.identifiers.cloud.ws.linkchecker.strategies.LinkCheckerReport;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
@@ -26,11 +25,10 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { TestRedisServer.class })
-@ActiveProfiles("authdisabled")
 public class LinkCheckerTests {
 
     @Autowired
-    private LinkChecker checker;
+    private LinkCheckerStrategy checker;
 
     @Autowired
     @Qualifier("linkCheckerRestTemplate")

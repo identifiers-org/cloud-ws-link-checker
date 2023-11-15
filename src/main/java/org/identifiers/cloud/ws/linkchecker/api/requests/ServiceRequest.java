@@ -21,7 +21,7 @@ public class ServiceRequest<T> implements Serializable {
         return apiVersion;
     }
 
-    public ServiceRequest setApiVersion(String apiVersion) {
+    public ServiceRequest<T> setApiVersion(String apiVersion) {
         this.apiVersion = apiVersion;
         return this;
     }
@@ -30,7 +30,7 @@ public class ServiceRequest<T> implements Serializable {
         return payload;
     }
 
-    public ServiceRequest setPayload(T payload) {
+    public ServiceRequest<T> setPayload(T payload) {
         this.payload = payload;
         return this;
     }

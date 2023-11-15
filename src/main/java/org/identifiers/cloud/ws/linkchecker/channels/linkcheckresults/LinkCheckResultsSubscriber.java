@@ -8,7 +8,7 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Project: link-checker
@@ -20,14 +20,18 @@ import javax.annotation.PostConstruct;
  */
 @Component
 public class LinkCheckResultsSubscriber extends Subscriber<String, LinkCheckResult> {
-    @Autowired
-    private RedisMessageListenerContainer redisContainer;
+    private final RedisMessageListenerContainer redisContainer;
+    private final ChannelTopic channelTopicLinkCheckResults;
+    private final RedisTemplate<String, LinkCheckResult> linkCheckResultRedisTemplate;
 
-    @Autowired
-    private ChannelTopic channelTopicLinkCheckResults;
-
-    @Autowired
-    private RedisTemplate<String, LinkCheckResult> linkCheckResultRedisTemplate;
+    public LinkCheckResultsSubscriber(
+            @Autowired RedisMessageListenerContainer redisContainer,
+            @Autowired ChannelTopic channelTopicLinkCheckResults,
+            @Autowired RedisTemplate<String, LinkCheckResult> linkCheckResultRedisTemplate) {
+        this.redisContainer = redisContainer;
+        this.channelTopicLinkCheckResults = channelTopicLinkCheckResults;
+        this.linkCheckResultRedisTemplate = linkCheckResultRedisTemplate;
+    }
 
     @PostConstruct
     public void registerSubscriber() {

@@ -46,7 +46,7 @@ public class CheckedUrlHistoryStatsSimple implements CheckedUrlHistoryStats, Ser
     }
 
     @Override
-    public double getUpPercenetage() {
+    public double getUpPercentage() {
         int nEvents = nDownEvents + nUpEvents;
         if (nEvents == 0) {
             return 50.0;

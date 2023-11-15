@@ -1,34 +1,30 @@
 package org.identifiers.cloud.ws.linkchecker.configuration;
 
+import lombok.extern.slf4j.Slf4j;
+import org.identifiers.cloud.libapi.services.ApiServicesFactory;
+import org.identifiers.cloud.libapi.services.ResolverService;
 import org.identifiers.cloud.ws.linkchecker.data.models.FlushHistoryTrackingDataMessage;
 import org.identifiers.cloud.ws.linkchecker.data.models.LinkCheckRequest;
 import org.identifiers.cloud.ws.linkchecker.data.models.LinkCheckResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.data.redis.support.collections.DefaultRedisList;
-import org.springframework.data.redis.support.collections.RedisList;
-import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.ResponseErrorHandler;
-import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.Executors;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 /**
  * Project: link-checker
@@ -41,16 +37,9 @@ import java.util.concurrent.BlockingDeque;
  * Default Application configuration
  */
 @Configuration
+@Slf4j
 @EnableRedisRepositories(enableKeyspaceEvents = RedisKeyValueAdapter.EnableKeyspaceEvents.ON_STARTUP)
 public class ApplicationConfig {
-    private static final Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
-
-    @Value("${spring.redis.port}")
-    private int redisPort;
-
-    @Value("${spring.redis.host}")
-    private String redisHost;
-
     @Value("${org.identifiers.cloud.ws.linkchecker.backend.data.queue.key.linkcheckrequests}")
     private String queueKeyLinkCheckRequests;
 
@@ -60,58 +49,69 @@ public class ApplicationConfig {
     @Value("${org.identifiers.cloud.ws.linkchecker.backend.data.channel.key.flushhistorytrackingdata}")
     private String channelKeyFlushHistoryTrackingData;
 
+    @Value("${org.identifiers.cloud.ws.linkchecker.backend.service.resolver.host}")
+    String wsResolverHost;
+
+    @Value("${org.identifiers.cloud.ws.linkchecker.backend.service.resolver.port}")
+    String wsResolverPort;
+
     @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
-        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(redisHost,
-                redisPort);
-        return new JedisConnectionFactory(redisStandaloneConfiguration);
+    public LettuceConnectionFactory redisConnectionFactory(
+            @Value("${spring.redis.host}") String redisHost,
+            @Value("${spring.redis.port}") int redisPort
+    ) {
+        RedisStandaloneConfiguration config
+                = new RedisStandaloneConfiguration(redisHost, redisPort);
+        return new LettuceConnectionFactory(config);
     }
 
     @Bean
-    public RedisTemplate<?, ?> redisTemplate() {
+    public RedisTemplate<?, ?> redisTemplate(@Autowired LettuceConnectionFactory redisConnectionFactory) {
         RedisTemplate<byte[], byte[]> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory());
+        template.setConnectionFactory(redisConnectionFactory);
         return template;
     }
 
     @Bean
-    public RedisTemplate<String, LinkCheckRequest> linkCheckRequestRedisTemplate() {
+    public RedisTemplate<String, LinkCheckRequest>
+    linkCheckRequestRedisTemplate(@Autowired LettuceConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, LinkCheckRequest> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setConnectionFactory(redisConnectionFactory);
         return redisTemplate;
     }
 
     @Bean
-    public BlockingDeque<LinkCheckRequest> linkCheckRequestQueue() {
-        RedisList<LinkCheckRequest> linkCheckRequests = new DefaultRedisList<>(queueKeyLinkCheckRequests,
-                linkCheckRequestRedisTemplate());
-        return linkCheckRequests;
+    public BlockingDeque<LinkCheckRequest>
+    linkCheckRequestQueue(@Autowired RedisTemplate<String, LinkCheckRequest> linkCheckRequestRedisTemplate) {
+        return new DefaultRedisList<>(queueKeyLinkCheckRequests, linkCheckRequestRedisTemplate);
     }
 
     // Publisher Subscriber
     // Link Check Results
     @Bean
-    public RedisTemplate<String, LinkCheckResult> linkCheckResultRedisTemplate() {
+    public RedisTemplate<String, LinkCheckResult>
+    linkCheckResultRedisTemplate(@Autowired LettuceConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, LinkCheckResult> redisTemplate = new RedisTemplate<>();
-        // TODO - Refactor this part of the code when possible
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setConnectionFactory(redisConnectionFactory);
         return redisTemplate;
     }
 
     // Flush History Tracking Data Message
     @Bean
-    public RedisTemplate<String, FlushHistoryTrackingDataMessage> flushHistoryTrackingDataMessageRedisTemplate() {
+    public RedisTemplate<String, FlushHistoryTrackingDataMessage>
+    flushHistoryTrackingDataMessageRedisTemplate(@Autowired LettuceConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, FlushHistoryTrackingDataMessage> redisTemplate = new RedisTemplate<>();
-        // TODO - Refactor this part of the code when possible
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
+
+        redisTemplate.setConnectionFactory(redisConnectionFactory);
         return redisTemplate;
     }
 
     // Redis Container
     @Bean
-    public RedisMessageListenerContainer redisContainer() {
+    public RedisMessageListenerContainer
+    redisContainer(@Autowired LettuceConnectionFactory redisConnectionFactory) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(redisConnectionFactory());
+        container.setConnectionFactory(redisConnectionFactory);
         container.start();
         return container;
     }
@@ -129,26 +129,17 @@ public class ApplicationConfig {
     }
 
     @Bean
-    @Qualifier("linkCheckerRestTemplate")
-    public RestTemplate linkCheckerRestTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory() {
-            @Override
-            protected void prepareConnection(HttpURLConnection connection, String httpMethod) throws IOException {
-                super.prepareConnection(connection, httpMethod);
-                connection.setInstanceFollowRedirects(true);
-                connection.setUseCaches(false);
-                connection.setConnectTimeout(3000);
-                connection.setReadTimeout(12000);
-            }
-        };
-        restTemplate.setRequestFactory(requestFactory);
-        restTemplate.setErrorHandler(new ResponseErrorHandler() { // We should ignore errors
-            @Override
-            public boolean hasError(ClientHttpResponse clientHttpResponse) { return false; }
-            @Override
-            public void handleError(ClientHttpResponse clientHttpResponse) {}
-        });
-        return restTemplate;
+    public HttpClient linkCheckerHttpClient() {
+        return HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .connectTimeout(Duration.of(12, SECONDS))
+                .executor(Executors.newCachedThreadPool())
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+    }
+
+    @Bean
+    public ResolverService serviceResponseResolve() {
+        return ApiServicesFactory.getResolverService(wsResolverHost, wsResolverPort);
     }
 }

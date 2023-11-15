@@ -24,7 +24,7 @@ public abstract class HistoryTracker implements Serializable {
     // When the tracking was queued / added to the link checker (UTC)
     private Timestamp created = new Timestamp(new Date().getTime());
     // History stats for this tracker instance
-    private Map<String, CheckedUrlHistoryStats> historyStatsMap =
+    private final Map<String, CheckedUrlHistoryStats> historyStatsMap =
             Arrays.stream(HistoryStats.values()).collect(Collectors.toMap(HistoryStats::getKey, historyStats -> historyStats.getFactoryMethod().get()));
 
     public String getUrl() {
@@ -65,9 +65,9 @@ public abstract class HistoryTracker implements Serializable {
     public enum HistoryStats implements Serializable {
         SIMPLE(CheckedUrlHistoryStatsSimple::new, "simple", "Simple UP/DOWN history tracking");
 
-        private Supplier<CheckedUrlHistoryStats> factoryMethod;
-        private String key;
-        private String description;
+        private final Supplier<CheckedUrlHistoryStats> factoryMethod;
+        private final String key;
+        private final String description;
 
         HistoryStats(Supplier<CheckedUrlHistoryStats> factoryMethod, String key, String description) {
             this.factoryMethod = factoryMethod;

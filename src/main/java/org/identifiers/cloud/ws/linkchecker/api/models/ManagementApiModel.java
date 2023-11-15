@@ -28,7 +28,7 @@ public class ManagementApiModel {
     private HistoryTrackingService historyTrackingService;
 
     public ServiceResponseManagementRequest flushLinkCheckingHistory() {
-        logger.warn("FLUSH REQUEST for link checking hisotrical data");
+        logger.warn("FLUSH REQUEST for link checking historical data");
         // It is responsibility of the history tracking service used to flush the link checking history
         // change this when the code is completed
         ServiceResponseManagementRequest response = new ServiceResponseManagementRequest();
@@ -37,7 +37,7 @@ public class ManagementApiModel {
         try {
             historyTrackingService.deleteHistoryTrackingData();
         } catch (HistoryTrackingServiceException e) {
-            logger.error("The following error occurred while tryign to flush link checking historical data, '{}'", e.getMessage());
+            logger.error("The following error occurred while trying to flush link checking historical data, '{}'", e.getMessage());
             response.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             response.getPayload().setMessage("An error occurred while trying to flush link checking historical data, but DON'T PANIC, we'll get back on track");
         }

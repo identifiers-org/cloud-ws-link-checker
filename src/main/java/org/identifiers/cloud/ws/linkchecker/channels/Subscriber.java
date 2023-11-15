@@ -24,7 +24,7 @@ import java.util.Set;
 public abstract class Subscriber<K, V> implements MessageListener {
     private static final Logger logger = LoggerFactory.getLogger(Subscriber.class);
 
-    private Set<Listener<V>> listeners = new HashSet<>();
+    private final Set<Listener<V>> listeners = new HashSet<>();
 
     protected abstract RedisMessageListenerContainer getRedisContainer();
     protected abstract ChannelTopic getChannelTopic();

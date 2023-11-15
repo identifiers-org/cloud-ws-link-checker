@@ -8,7 +8,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { TestRedisServer.class })
-@ActiveProfiles("authdisabled")
 public class LinkCheckerApplicationTests {
 
     @Test
