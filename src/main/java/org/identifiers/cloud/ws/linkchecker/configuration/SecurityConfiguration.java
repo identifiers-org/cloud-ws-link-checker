@@ -34,6 +34,7 @@ public class SecurityConfiguration {
                 .requestMatchers("/actuator").hasAuthority(requiredRole)
                 .requestMatchers("/actuator/loggers/**").hasAuthority(requiredRole)
                 .requestMatchers("/management/flushLinkCheckingHistory").hasAuthority(requiredRole)
+                .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/getScoreFor*").permitAll())
             .formLogin(AbstractHttpConfigurer::disable)
