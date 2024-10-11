@@ -1,7 +1,6 @@
 # Development environment for working with the Link Checker service
 # Author: Manuel Bernal Llinares <mbdebian@gmail.com>
 # TODO This development environment is not fully functional, because the recommender depends on the very same service we're working on, and it will not escape it's container to connect to the host OS.
-version: "3.5"
 services:
     resolver:
         image: identifiersorg/cloud-ws-resolver

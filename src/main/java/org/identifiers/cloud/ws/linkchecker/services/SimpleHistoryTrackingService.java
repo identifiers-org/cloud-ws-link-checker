@@ -3,6 +3,7 @@ package org.identifiers.cloud.ws.linkchecker.services;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
+import lombok.RequiredArgsConstructor;
 import org.identifiers.cloud.ws.linkchecker.api.requests.ScoringRequestWithIdPayload;
 import org.identifiers.cloud.ws.linkchecker.channels.PublisherException;
 import org.identifiers.cloud.ws.linkchecker.channels.management.flushhistorytrackingdata.FlushHistoryTrackingDataPublisher;
@@ -15,18 +16,17 @@ import org.identifiers.cloud.ws.linkchecker.models.ProviderTracker;
 import org.identifiers.cloud.ws.linkchecker.models.ResourceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Project: link-checker
@@ -37,50 +37,40 @@ import java.util.concurrent.TimeUnit;
  * ---
  */
 @Component
+@RequiredArgsConstructor
 public class SimpleHistoryTrackingService implements HistoryTrackingService {
-    private final static Logger logger = LoggerFactory.getLogger(SimpleHistoryTrackingService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SimpleHistoryTrackingService.class);
     // Cached stats
     private Cache<String, ProviderTracker> providers;
     private Cache<String, ResourceTracker> resources;
 
     @Value("${org.identifiers.cloud.ws.linkchecker.backend.data.cache.expiry}")
-    Duration cacheExpiry;
-
+    Duration cacheExpiryDuration;
     @Value("${org.identifiers.cloud.ws.linkchecker.backend.data.cache.size}")
     long cacheSize;
 
     // Repositories
-    // TODO - Refactor out these repositories to services in the future (when possible), in the meantime, I will use
-    // TODO - link check results repository as an example of whether that makes sense in such a small component like
-    // TODO - this microservice, maybe in some cases we can break rules
-    @Autowired
-    private TrackedProviderRepository trackedProviderRepository;
-    @Autowired
-    private TrackedResourceRepository trackedResourceRepository;
+    private final TrackedProviderRepository trackedProviderRepository;
+    private final TrackedResourceRepository trackedResourceRepository;
     // Persistence Services
-    @Autowired
-    private LinkCheckResultsService linkCheckResultsService;
-
+    private final LinkCheckResultsService linkCheckResultsService;
     // Link check requests queue
-    @Autowired
-    private Deque<LinkCheckRequest> linkCheckRequestQueue;
-
+    private final Deque<LinkCheckRequest> linkCheckRequestQueue;
     // Channels
     // Flush Link Checking historic data
-    @Autowired
-    private FlushHistoryTrackingDataPublisher flushHistoryTrackingDataPublisher;
+    private final FlushHistoryTrackingDataPublisher flushHistoryTrackingDataPublisher;
 
     @PostConstruct
     public void initCache() {
         logger.info("Simple History Tracking Service - Cache SIZE = {}", cacheSize);
         providers = CacheBuilder.newBuilder()
                 .maximumSize(cacheSize)
-                .expireAfterWrite(cacheExpiry.getSeconds(), TimeUnit.SECONDS)
+                .expireAfterWrite(cacheExpiryDuration)
                 .removalListener(this::processProviderEviction)
                 .build();
         resources = CacheBuilder.newBuilder()
                 .maximumSize(cacheSize)
-                .expireAfterWrite(cacheExpiry.getSeconds(), TimeUnit.SECONDS)
+                .expireAfterWrite(cacheExpiryDuration)
                 .removalListener(this::processResourceEviction)
                 .build();
     }
@@ -107,16 +97,16 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
                 removalNotification.getCause().toString());
     }
 
-    // TODO - I may need to make this method synchronized because of the non-atomic gap between checking if a provider
-    // TODO - already has a tracking entry and creating one for it. It really depends on whether the Cache locks write
-    // TODO - operation by key or not.
-    // Tracking entry Loaders
     private ProviderTracker loadCreateTrackedProvider(ScoringRequestWithIdPayload scoringRequestWithIdPayload) {
+        return loadCreateTrackedProvider(scoringRequestWithIdPayload.getId(), scoringRequestWithIdPayload.getUrl());
+    }
+
+    private ProviderTracker loadCreateTrackedProvider(String id, String url) {
         ProviderTracker providerTracker = new ProviderTracker();
-        providerTracker.setId(scoringRequestWithIdPayload.getId())
-                .setUrl(scoringRequestWithIdPayload.getUrl());
+        providerTracker.setId(id)
+                .setUrl(url);
         Optional<TrackedProvider> trackedProvider =
-                trackedProviderRepository.findById(scoringRequestWithIdPayload.getId());
+                trackedProviderRepository.findById(id);
         trackedProvider.ifPresent(entry -> providerTracker.setCreated(entry.getCreated()));
         if (trackedProvider.isEmpty()) {
             TrackedProvider newTrackedProvider = new TrackedProvider()
@@ -128,17 +118,16 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
         return providerTracker;
     }
 
-    private ResourceTracker loadCreateTrackedResource(ScoringRequestWithIdPayload scoringRequestWithIdPayload) {
+
+    private ResourceTracker loadCreateTrackedResource(String id, String url) {
         // NOTE - I know this method looks a lot like 'loadCreateTrackedProvider', at this iteration of the service,
         // both entities look pretty much the same, but not only they're expected to diverge, maybe, slightly in the
         // future, but it also makes sense to ease things with serialization/deserialization on the data backend, so,
         // by doing what it looks like duplicating code... it is not actually, as it is contributing to having a lot of
         // heavy lifting done for free.
         ResourceTracker resourceTracker = new ResourceTracker();
-        resourceTracker.setId(scoringRequestWithIdPayload.getId())
-                .setUrl(scoringRequestWithIdPayload.getUrl());
-        Optional<TrackedResource> trackedResource =
-                trackedResourceRepository.findById(scoringRequestWithIdPayload.getId());
+        resourceTracker.setId(id).setUrl(url);
+        Optional<TrackedResource> trackedResource = trackedResourceRepository.findById(id);
         trackedResource.ifPresent(entry -> resourceTracker.setCreated(entry.getCreated()));
         if (trackedResource.isEmpty()) {
             TrackedResource newTrackedResource = new TrackedResource()
@@ -150,9 +139,21 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
         return resourceTracker;
     }
 
+    private ResourceTracker loadCreateTrackedResource(ScoringRequestWithIdPayload scoringRequestWithIdPayload) {
+        return loadCreateTrackedResource(scoringRequestWithIdPayload.getId(), scoringRequestWithIdPayload.getUrl());
+    }
+
     private ProviderTracker updateProviderTrackerWith(LinkCheckResult linkCheckResult) {
-        ProviderTracker providerTracker = providers.getIfPresent(linkCheckResult.getProviderId());
-        if (providerTracker != null) {
+        try {
+            ProviderTracker providerTracker = providers.get(linkCheckResult.getProviderId(), () -> {
+                var tracker = loadCreateTrackedProvider(linkCheckResult.getProviderId(), linkCheckResult.getUrl());
+                // Initialize stats for the given resource
+                List<LinkCheckResult> linkCheckResults = linkCheckResultsService.findByProviderId(linkCheckResult.getProviderId());
+                if (linkCheckResults != null) {
+                    tracker.initHistoryStats(linkCheckResults);
+                }
+                return tracker;
+            });
             logger.info("Updating history tracker for provider ID '{}' with link check result on URL '{}', " +
                             "request timestamp '{}', check timestamp '{}', elapsed '{}'",
                     linkCheckResult.getProviderId(),
@@ -161,21 +162,30 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
                     linkCheckResult.getTimestamp(),
                     (linkCheckResult.getTimestamp().getTime() - linkCheckResult.getRequestTimestamp().getTime()));
             providerTracker.addLinkCheckResult(linkCheckResult);
-        } else {
+            return providerTracker;
+        } catch (ExecutionException ex) {
             logger.info("SKIP NOT CACHED history tracker for provider ID '{}' with link check result on URL '{}', " +
-                            "request timestamp '{}', check timestamp '{}', elapsed '{}'",
+                            "request timestamp '{}', check timestamp '{}', due to '{}'",
                     linkCheckResult.getProviderId(),
                     linkCheckResult.getUrl(),
                     linkCheckResult.getRequestTimestamp(),
                     linkCheckResult.getTimestamp(),
-                    (linkCheckResult.getTimestamp().getTime() - linkCheckResult.getRequestTimestamp().getTime()));
+                    ex.getMessage());
+            return null;
         }
-        return providerTracker;
     }
 
     private ResourceTracker updateResourceTrackerWith(LinkCheckResult linkCheckResult) {
-        ResourceTracker resourceTracker = resources.getIfPresent(linkCheckResult.getResourceId());
-        if (resourceTracker != null) {
+        try {
+            ResourceTracker resourceTracker = resources.get(linkCheckResult.getResourceId(), () -> {
+                var tracker = loadCreateTrackedResource(linkCheckResult.getResourceId(), linkCheckResult.getUrl());
+                // Initialize stats for the given resource
+                List<LinkCheckResult> linkCheckResults = linkCheckResultsService.findByResourceId(linkCheckResult.getResourceId());
+                if (linkCheckResults != null) {
+                    tracker.initHistoryStats(linkCheckResults);
+                }
+                return tracker;
+            });
             logger.info("Updating history tracker for resource ID '{}' with link check result on URL '{}', " +
                             "request timestamp '{}', check timestamp '{}', elapsed '{}'",
                     linkCheckResult.getResourceId(),
@@ -184,22 +194,26 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
                     linkCheckResult.getTimestamp(),
                     (linkCheckResult.getTimestamp().getTime() - linkCheckResult.getRequestTimestamp().getTime()));
             resourceTracker.addLinkCheckResult(linkCheckResult);
-        } else {
+            return resourceTracker;
+        } catch (ExecutionException e) {
             logger.info("SKIP NOT CACHED history tracker for resource ID '{}' with link check result on URL '{}', " +
-                            "request timestamp '{}', check timestamp '{}', elapsed '{}'",
+                            "request timestamp '{}', check timestamp '{}', due to '{}'",
                     linkCheckResult.getResourceId(),
                     linkCheckResult.getUrl(),
                     linkCheckResult.getRequestTimestamp(),
                     linkCheckResult.getTimestamp(),
-                    (linkCheckResult.getTimestamp().getTime() - linkCheckResult.getRequestTimestamp().getTime()));
+                    e.getMessage());
+            return null;
         }
-        return resourceTracker;
     }
 
     @Override
     public ProviderTracker getTrackerForProvider(ScoringRequestWithIdPayload scoringRequestWithIdPayload) throws
             HistoryTrackingServiceException {
-        // TODO - Queue the provider scoring requests
+        linkCheckRequestQueue.add(new LinkCheckRequest()
+                .setProviderId(scoringRequestWithIdPayload.getId())
+                .setUrl(scoringRequestWithIdPayload.getUrl())
+                .setAccept401or403(scoringRequestWithIdPayload.getAccept401or403()));
         try {
             return providers.get(scoringRequestWithIdPayload.getId(), () -> {
                 ProviderTracker providerTracker = loadCreateTrackedProvider(scoringRequestWithIdPayload);
@@ -212,11 +226,14 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
                 return providerTracker;
             });
         } catch (ExecutionException e) {
-            throw new SimpleHistoryTrackingServiceException(String.format("Error while getting scoring stats " +
-                            "for Provider ID '%s', URL '%s', because '%s'",
-                    scoringRequestWithIdPayload.getId(),
-                    scoringRequestWithIdPayload.getUrl(),
-                    e.getMessage()));
+            logger.error("Error while getting scoring stats for Provider ID '{}', URL '{}'",
+                    scoringRequestWithIdPayload.getId(), scoringRequestWithIdPayload.getUrl(), e);
+            var ex = new SimpleHistoryTrackingServiceException(String.format(
+                    "Error while getting scoring stats for Provider ID '%s', URL '%s', because '%s'",
+                            scoringRequestWithIdPayload.getId(), scoringRequestWithIdPayload.getUrl(),
+                            e.getMessage()));
+            ex.initCause(e);
+            throw ex;
         }
     }
 
@@ -246,19 +263,19 @@ public class SimpleHistoryTrackingService implements HistoryTrackingService {
         }
     }
 
+    public Collection<ResourceTracker> getAllResourceTrackers() {
+        return resources.asMap().values();
+    }
+
     @Override
     public HistoryTracker updateTrackerWith(LinkCheckResult linkCheckResult) throws HistoryTrackingServiceException {
-        ProviderTracker providerTracker = null;
         if (linkCheckResult.getProviderId() != null) {
-            // It is a provider link check result
             return updateProviderTrackerWith(linkCheckResult);
         }
         if (linkCheckResult.getResourceId() != null) {
-            // It is a resource link check result
             return updateResourceTrackerWith(linkCheckResult);
         }
-        // TODO - It is a plain URL check result
-        return null;
+        throw new IllegalStateException("Result can't have both IDs null: " + linkCheckResult.getUrl());
     }
 
     @Override

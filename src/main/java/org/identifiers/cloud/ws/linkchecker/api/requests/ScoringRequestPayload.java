@@ -1,6 +1,9 @@
 package org.identifiers.cloud.ws.linkchecker.api.requests;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 
@@ -12,6 +15,7 @@ import java.io.Serializable;
  * @author Manuel Bernal Llinares <mbdebian@gmail.com>
  * ---
  */
+@Getter @Setter @Accessors(chain = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ScoringRequestPayload implements Serializable {
     protected String url;
@@ -19,17 +23,5 @@ public class ScoringRequestPayload implements Serializable {
 
     public boolean getAccept401or403() {
         return accept401or403;
-    }
-    public ScoringRequestPayload setAccept401or403(boolean accept401or403) {
-        this.accept401or403 = accept401or403;
-        return this;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-    public ScoringRequestPayload setUrl(String url) {
-        this.url = url;
-        return this;
     }
 }

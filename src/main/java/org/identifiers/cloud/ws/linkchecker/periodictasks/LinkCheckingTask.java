@@ -81,6 +81,8 @@ public class LinkCheckingTask implements Runnable{
                 if (linkCheckResult != null) { // FIXME: Sometimes a null result here is a result of a check IO error, possibly an offline resource
                     persist(linkCheckResult);
                     announce(linkCheckResult);
+                } else {
+                    logger.info("Failed to attend link check");
                 }
                 linkCheckRequest = nextLinkCheckRequest();
             }

@@ -1,4 +1,4 @@
-package org.identifiers.cloud.ws.linkchecker.data.models;
+package org.identifiers.cloud.ws.linkchecker.configuration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

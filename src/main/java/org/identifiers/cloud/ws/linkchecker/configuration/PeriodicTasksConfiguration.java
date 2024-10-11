@@ -14,6 +14,7 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Configuration
@@ -31,9 +32,9 @@ public class PeriodicTasksConfiguration implements SchedulingConfigurer {
     }
 
 
-    @Bean
-    public Executor taskExecutor() {
-        return Executors.newFixedThreadPool(2);
+    @Bean(destroyMethod="shutdown")
+    public ExecutorService taskExecutor() {
+        return Executors.newScheduledThreadPool(2);
     }
 
 

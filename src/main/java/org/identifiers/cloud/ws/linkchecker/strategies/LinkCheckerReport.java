@@ -1,5 +1,9 @@
 package org.identifiers.cloud.ws.linkchecker.strategies;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import java.io.Serializable;
 import java.sql.Timestamp;
 
@@ -13,6 +17,7 @@ import java.sql.Timestamp;
  *
  * Report built by a link checking strategy.
  */
+@Getter @Setter @Accessors(chain = true)
 public class LinkCheckerReport implements Serializable {
     // Checked URL
     private String url;
@@ -23,40 +28,4 @@ public class LinkCheckerReport implements Serializable {
     // Checking strategy URL status evaluation. This is an assessment of the checked URL, on whether it is considered to
     // lead to a non-error resource, and it is calculated by the link checking strategy used.
     private boolean urlAssessmentOk = false;
-
-    public String getUrl() {
-        return url;
-    }
-
-    public LinkCheckerReport setUrl(String url) {
-        this.url = url;
-        return this;
-    }
-
-    public Timestamp getTimestamp() {
-        return timestamp;
-    }
-
-    public LinkCheckerReport setTimestamp(Timestamp timestamp) {
-        this.timestamp = timestamp;
-        return this;
-    }
-
-    public int getHttpStatus() {
-        return httpStatus;
-    }
-
-    public LinkCheckerReport setHttpStatus(int httpStatus) {
-        this.httpStatus = httpStatus;
-        return this;
-    }
-
-    public boolean isUrlAssessmentOk() {
-        return urlAssessmentOk;
-    }
-
-    public LinkCheckerReport setUrlAssessmentOk(boolean urlAssessmentOk) {
-        this.urlAssessmentOk = urlAssessmentOk;
-        return this;
-    }
 }

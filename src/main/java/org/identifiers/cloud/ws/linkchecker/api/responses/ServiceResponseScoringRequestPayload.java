@@ -1,5 +1,9 @@
 package org.identifiers.cloud.ws.linkchecker.api.responses;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import java.io.Serializable;
 
 /**
@@ -12,16 +16,8 @@ import java.io.Serializable;
  *
  * Response to a Scoring request
  */
+@Getter @Setter @Accessors(chain = true)
 public class ServiceResponseScoringRequestPayload implements Serializable {
     // Default scoring
     private int score = 50;
-
-    public int getScore() {
-        return score;
-    }
-
-    public ServiceResponseScoringRequestPayload setScore(int score) {
-        this.score = score;
-        return this;
-    }
 }

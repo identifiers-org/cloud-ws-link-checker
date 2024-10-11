@@ -1,10 +1,15 @@
 package org.identifiers.cloud.ws.linkchecker.data.models;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import org.identifiers.cloud.ws.linkchecker.configuration.LinkCheckResultConfig;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.index.Indexed;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -19,8 +24,12 @@ import java.util.Date;
  *
  * This entity models a checked URL, for either a provider, a resource or a plain URL.
  */
+@Getter @Setter @Accessors(chain = true)
 @RedisHash(value = "LinkCheckerLinkCheckResult")
 public class LinkCheckResult implements Serializable, Comparable<LinkCheckResult> {
+    @Serial
+    private static final long serialVersionUID = -7180056948087986389L;
+
     // TTL as property
     @TimeToLive private Long timeToLive = LinkCheckResultConfig.timeToLive;
     // Result ID, hopefully manufactured by Redis
@@ -45,84 +54,15 @@ public class LinkCheckResult implements Serializable, Comparable<LinkCheckResult
     // lead to a non-error resource, and it is calculated by the link checking strategy used.
     private boolean urlAssessmentOk = false;
 
-    public Long getTimeToLive() {
-        return timeToLive;
-    }
-
-    public void setTimeToLive(Long ttl) {
-        timeToLive = ttl;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public LinkCheckResult setId(String id) {
-        this.id = id;
-        return this;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public LinkCheckResult setUrl(String url) {
-        this.url = url;
-        return this;
-    }
-
-    public Timestamp getTimestamp() {
-        return Timestamp.valueOf(timestamp);
-    }
-
-    public LinkCheckResult setTimestamp(Timestamp timestamp) {
-        this.timestamp = timestamp.toString();
-        return this;
-    }
-
-    public Timestamp getRequestTimestamp() {
-        return Timestamp.valueOf(requestTimestamp);
-    }
-
     public LinkCheckResult setRequestTimestamp(Timestamp requestTimestamp) {
         this.requestTimestamp = requestTimestamp.toString();
         return this;
     }
-
-    public String getProviderId() {
-        return providerId;
+    public Timestamp getRequestTimestamp() {
+        return Timestamp.valueOf(requestTimestamp);
     }
-
-    public LinkCheckResult setProviderId(String providerId) {
-        this.providerId = providerId;
-        return this;
-    }
-
-    public String getResourceId() {
-        return resourceId;
-    }
-
-    public LinkCheckResult setResourceId(String resourceId) {
-        this.resourceId = resourceId;
-        return this;
-    }
-
-    public int getHttpStatus() {
-        return httpStatus;
-    }
-
-    public LinkCheckResult setHttpStatus(int httpStatus) {
-        this.httpStatus = httpStatus;
-        return this;
-    }
-
-    public boolean isUrlAssessmentOk() {
-        return urlAssessmentOk;
-    }
-
-    public LinkCheckResult setUrlAssessmentOk(boolean urlAssessmentOk) {
-        this.urlAssessmentOk = urlAssessmentOk;
-        return this;
+    public Timestamp getTimestamp() {
+        return Timestamp.valueOf(requestTimestamp);
     }
 
     @Override

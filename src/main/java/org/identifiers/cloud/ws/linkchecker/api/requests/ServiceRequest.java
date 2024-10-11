@@ -1,6 +1,9 @@
 package org.identifiers.cloud.ws.linkchecker.api.requests;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 
@@ -12,26 +15,9 @@ import java.io.Serializable;
  * @author Manuel Bernal Llinares <mbdebian@gmail.com>
  * ---
  */
+@Getter @Setter @Accessors(chain = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ServiceRequest<T> implements Serializable {
+public class ServiceRequest<T extends Serializable> implements Serializable {
     private String apiVersion;
     private T payload;
-
-    public String getApiVersion() {
-        return apiVersion;
-    }
-
-    public ServiceRequest<T> setApiVersion(String apiVersion) {
-        this.apiVersion = apiVersion;
-        return this;
-    }
-
-    public T getPayload() {
-        return payload;
-    }
-
-    public ServiceRequest<T> setPayload(T payload) {
-        this.payload = payload;
-        return this;
-    }
 }

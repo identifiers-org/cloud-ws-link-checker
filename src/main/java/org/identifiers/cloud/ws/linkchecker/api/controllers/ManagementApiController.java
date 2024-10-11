@@ -1,5 +1,6 @@
 package org.identifiers.cloud.ws.linkchecker.api.controllers;
 
+import lombok.RequiredArgsConstructor;
 import org.identifiers.cloud.ws.linkchecker.api.models.ManagementApiModel;
 import org.identifiers.cloud.ws.linkchecker.api.responses.ServiceResponseManagementRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
  * like flushing the link checking historical data.
  */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/management")
 public class ManagementApiController {
-
-    @Autowired
-    private ManagementApiModel model;
+    private final ManagementApiModel model;
 
     @RequestMapping("flushLinkCheckingHistory")
-    public ResponseEntity<?> flushLinkCheckingHistory() {
+    public ResponseEntity<ServiceResponseManagementRequest> flushLinkCheckingHistory() {
         ServiceResponseManagementRequest response = model.flushLinkCheckingHistory();
         return new ResponseEntity<>(response, response.getHttpStatus());
     }
