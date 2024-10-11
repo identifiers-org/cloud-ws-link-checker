@@ -1,6 +1,5 @@
 package org.identifiers.cloud.ws.linkchecker.api.models;
 
-import lombok.RequiredArgsConstructor;
 import org.identifiers.cloud.ws.linkchecker.api.responses.ServiceResponseManagementRequest;
 import org.identifiers.cloud.ws.linkchecker.api.responses.ServiceResponseManagementRequestPayload;
 import org.identifiers.cloud.ws.linkchecker.services.HistoryTrackingService;
@@ -22,10 +21,10 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Scope("prototype")
-@RequiredArgsConstructor
 public class ManagementApiModel {
     private static final Logger logger = LoggerFactory.getLogger(ManagementApiModel.class);
-    private final HistoryTrackingService historyTrackingService;
+
+    private HistoryTrackingService historyTrackingService;
 
     public ServiceResponseManagementRequest flushLinkCheckingHistory() {
         logger.warn("FLUSH REQUEST for link checking historical data");
@@ -42,5 +41,10 @@ public class ManagementApiModel {
             response.getPayload().setMessage("An error occurred while trying to flush link checking historical data, but DON'T PANIC, we'll get back on track");
         }
         return response;
+    }
+
+    @Autowired
+    public void setHistoryTrackingService(HistoryTrackingService historyTrackingService) {
+        this.historyTrackingService = historyTrackingService;
     }
 }
