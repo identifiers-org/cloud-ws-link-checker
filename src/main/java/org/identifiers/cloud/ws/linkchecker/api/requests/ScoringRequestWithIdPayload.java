@@ -1,6 +1,9 @@
 package org.identifiers.cloud.ws.linkchecker.api.requests;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 
@@ -13,15 +16,7 @@ import java.io.Serializable;
  * ---
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Getter @Setter @Accessors(chain = true)
 public class ScoringRequestWithIdPayload extends ScoringRequestPayload implements Serializable {
     private String id;
-
-    public String getId() {
-        return id;
-    }
-
-    public ScoringRequestWithIdPayload setId(String id) {
-        this.id = id;
-        return this;
-    }
 }

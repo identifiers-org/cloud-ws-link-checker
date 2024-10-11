@@ -1,5 +1,9 @@
 package org.identifiers.cloud.ws.linkchecker.models;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 /**
  * Project: link-checker
  * Package: org.identifiers.cloud.ws.linkchecker.models
@@ -8,16 +12,8 @@ package org.identifiers.cloud.ws.linkchecker.models;
  * @author Manuel Bernal Llinares <mbdebian@gmail.com>
  * ---
  */
+@Getter @Setter @Accessors(chain = true)
 public class ResourceTracker extends HistoryTracker {
     // Resource ID within the context of a namespace / prefix
     private String id;
-
-    public String getId() {
-        return id;
-    }
-
-    public ResourceTracker setId(String id) {
-        this.id = id;
-        return this;
-    }
 }

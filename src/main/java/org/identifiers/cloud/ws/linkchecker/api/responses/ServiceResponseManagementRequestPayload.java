@@ -1,5 +1,9 @@
 package org.identifiers.cloud.ws.linkchecker.api.responses;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
 import java.io.Serializable;
 
 /**
@@ -12,15 +16,7 @@ import java.io.Serializable;
  *
  * This is a generic payload for management requests.
  */
+@Getter @Setter @Accessors(chain = true)
 public class ServiceResponseManagementRequestPayload implements Serializable {
     private String message = "";
-
-    public String getMessage() {
-        return message;
-    }
-
-    public ServiceResponseManagementRequestPayload setMessage(String message) {
-        this.message = message;
-        return this;
-    }
 }

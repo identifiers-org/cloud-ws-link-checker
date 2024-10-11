@@ -1,5 +1,6 @@
 package org.identifiers.cloud.ws.linkchecker.listeners;
 
+import lombok.RequiredArgsConstructor;
 import org.identifiers.cloud.ws.linkchecker.channels.Listener;
 import org.identifiers.cloud.ws.linkchecker.channels.management.flushhistorytrackingdata
         .FlushHistoryTrackingDataSubscriber;
@@ -22,14 +23,12 @@ import jakarta.annotation.PostConstruct;
  * ---
  */
 @Component
+@RequiredArgsConstructor
 public class FlushHistoryTrackingDataListener implements Listener<FlushHistoryTrackingDataMessage> {
     private static final Logger logger = LoggerFactory.getLogger(FlushHistoryTrackingDataListener.class);
 
-    @Autowired
-    private FlushHistoryTrackingDataSubscriber subscriber;
-
-    @Autowired
-    private HistoryTrackingService historyTrackingService;
+    private final FlushHistoryTrackingDataSubscriber subscriber;
+    private final HistoryTrackingService historyTrackingService;
 
     @PostConstruct
     private void init() {

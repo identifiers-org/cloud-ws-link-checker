@@ -1,5 +1,6 @@
 package org.identifiers.cloud.ws.linkchecker.channels.management.flushhistorytrackingdata;
 
+import lombok.RequiredArgsConstructor;
 import org.identifiers.cloud.ws.linkchecker.channels.Subscriber;
 import org.identifiers.cloud.ws.linkchecker.data.models.FlushHistoryTrackingDataMessage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,19 +20,11 @@ import jakarta.annotation.PostConstruct;
  * ---
  */
 @Component
+@RequiredArgsConstructor
 public class FlushHistoryTrackingDataSubscriber extends Subscriber<String, FlushHistoryTrackingDataMessage> {
     private final RedisMessageListenerContainer redisContainer;
     private final ChannelTopic channelTopicFlushHistoryTrackingData;
     private final RedisTemplate<String, FlushHistoryTrackingDataMessage> flushHistoryTrackingDataMessageRedisTemplate;
-
-    public FlushHistoryTrackingDataSubscriber(
-            @Autowired RedisMessageListenerContainer redisContainer,
-            @Autowired ChannelTopic channelTopicFlushHistoryTrackingData,
-            @Autowired RedisTemplate<String, FlushHistoryTrackingDataMessage> flushHistoryTrackingDataMessageRedisTemplate) {
-        this.redisContainer = redisContainer;
-        this.channelTopicFlushHistoryTrackingData = channelTopicFlushHistoryTrackingData;
-        this.flushHistoryTrackingDataMessageRedisTemplate = flushHistoryTrackingDataMessageRedisTemplate;
-    }
 
     @PostConstruct
     public void registerSubscriber() {

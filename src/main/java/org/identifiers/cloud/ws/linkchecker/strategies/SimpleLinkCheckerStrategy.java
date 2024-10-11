@@ -12,6 +12,7 @@ import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 
 /**
@@ -41,14 +42,13 @@ public class SimpleLinkCheckerStrategy implements LinkCheckerStrategy {
                 .setUrl(checkingUrl.toString())
                 .setTimestamp(new Timestamp(System.currentTimeMillis()));
 
-        URI uri = URI.create(checkingUrl.toString());
-        HttpRequest request = HttpRequest.newBuilder()
-                .method("HEAD", HttpRequest.BodyPublishers.noBody())
-                .uri(uri).build();
         HttpResponse<?> response;
         try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                    .uri(checkingUrl.toURI()).build();
             response = linkCheckerHttpClient.send(request, HttpResponse.BodyHandlers.discarding());
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | URISyntaxException |InterruptedException e) {
             report.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             report.setUrlAssessmentOk(false);
             logger.info("[HTTP NaN] Exception when checking {}", report.getUrl());

@@ -1,19 +1,25 @@
 package org.identifiers.cloud.ws.linkchecker.api.models;
 
+import lombok.RequiredArgsConstructor;
 import org.identifiers.cloud.ws.linkchecker.api.ApiCentral;
 import org.identifiers.cloud.ws.linkchecker.api.requests.ServiceRequestScoreProvider;
 import org.identifiers.cloud.ws.linkchecker.api.requests.ServiceRequestScoreResource;
 import org.identifiers.cloud.ws.linkchecker.api.requests.ServiceRequestScoring;
 import org.identifiers.cloud.ws.linkchecker.api.responses.ServiceResponseScoringRequest;
 import org.identifiers.cloud.ws.linkchecker.api.responses.ServiceResponseScoringRequestPayload;
-import org.identifiers.cloud.ws.linkchecker.models.HistoryTracker;
+import org.identifiers.cloud.ws.linkchecker.models.ResourceTracker;
 import org.identifiers.cloud.ws.linkchecker.services.HistoryTrackingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import static org.identifiers.cloud.ws.linkchecker.models.HistoryTracker.HistoryStatsType.SIMPLE;
 
 /**
  * Project: link-checker
@@ -32,11 +38,10 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Scope("prototype")
+@RequiredArgsConstructor
 public class LinkScoringApiModel {
     private static final Logger logger = LoggerFactory.getLogger(LinkScoringApiModel.class);
-
-    @Autowired
-    private HistoryTrackingService historyTrackingService;
+    private final HistoryTrackingService historyTrackingService;
 
     private ServiceResponseScoringRequest getDefaultResponse() {
         ServiceResponseScoringRequest response = new ServiceResponseScoringRequest();
@@ -45,9 +50,6 @@ public class LinkScoringApiModel {
         return response;
     }
 
-    // TODO - The following method is a very simple way of scoring a provider but, in the future, more complex logic
-    // TODO - could be set in place, that also weights in 'how good' that provider has been when it comes to providing
-    // TODO - resources.
     /**
      * Getting a score for a provider (within the context of a particular namespace), is based on the 'uptime' history
      * of that provider, i.e. how many times the provider was up over the total number of times we have checked its
@@ -62,9 +64,9 @@ public class LinkScoringApiModel {
                 request.getPayload().getAccept401or403() ? "Yes" : "No");
         ServiceResponseScoringRequest response = getDefaultResponse();
         try {
-            response.getPayload()
-                    .setScore((int) Math.round(historyTrackingService.getTrackerForProvider(request.getPayload())
-                            .getHistoryStats(HistoryTracker.HistoryStats.SIMPLE).getUpPercentage()));
+            var tracker = historyTrackingService.getTrackerForProvider(request.getPayload());
+            var statsHistory = tracker.getHistoryStats(SIMPLE);
+            response.getPayload().setScore(Math.round(statsHistory.getUpPercentage()));
         } catch (Exception e) {
             response.setErrorMessage(String.format("Scoring could not be calculated due to '%s'", e.getMessage()));
             response.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -91,8 +93,11 @@ public class LinkScoringApiModel {
                 request.getPayload().getAccept401or403() ? "Yes" : "No");
         ServiceResponseScoringRequest response = getDefaultResponse();
         try {
-            response.getPayload().setScore((int) Math.round(historyTrackingService.getTrackerForResource(request
-                    .getPayload()).getHistoryStats(HistoryTracker.HistoryStats.SIMPLE).getUpPercentage()));
+            var tracker = historyTrackingService.getTrackerForResource(request.getPayload());
+            var historyStats = tracker.getHistoryStats(SIMPLE);
+            int score = Math.round(historyStats.getUpPercentage());
+            logger.debug("Score measured: {}", score);
+            response.getPayload().setScore(score);
         } catch (Exception e) {
             response.setErrorMessage(String.format("Scoring could not be calculated due to '%s'", e.getMessage()));
             response.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -118,5 +123,17 @@ public class LinkScoringApiModel {
         response.setHttpStatus(HttpStatus.BAD_REQUEST);
         response.setErrorMessage("This functionality if not available yet.");
         return response;
+    }
+
+    public Map<String, Float> getResourcesIdsWithAvailabilityLowerThan(int minAvailability) {
+        Predicate<ResourceTracker> availabilityFilter = tracker ->
+                tracker.getHistoryStats(SIMPLE).getUpPercentage() < minAvailability;
+        return historyTrackingService.getAllResourceTrackers()
+                .stream()
+                .filter(availabilityFilter)
+                .collect(Collectors.toMap(
+                        ResourceTracker::getId,
+                        tracker -> tracker.getHistoryStats(SIMPLE).getUpPercentage()
+                ));
     }
 }

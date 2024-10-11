@@ -6,6 +6,8 @@ import org.identifiers.cloud.ws.linkchecker.models.HistoryTracker;
 import org.identifiers.cloud.ws.linkchecker.models.ProviderTracker;
 import org.identifiers.cloud.ws.linkchecker.models.ResourceTracker;
 
+import java.util.Collection;
+
 /**
  * Project: link-checker
  * Package: org.identifiers.cloud.ws.linkchecker.services
@@ -31,4 +33,6 @@ public interface HistoryTrackingService {
 
     // Attend flushing request received by a sibling service
     void flushHistoryTrackers() throws HistoryTrackingServiceException;
+
+    Collection<ResourceTracker> getAllResourceTrackers();
 }

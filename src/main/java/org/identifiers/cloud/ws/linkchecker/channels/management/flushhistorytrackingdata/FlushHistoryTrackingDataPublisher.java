@@ -1,5 +1,6 @@
 package org.identifiers.cloud.ws.linkchecker.channels.management.flushhistorytrackingdata;
 
+import lombok.RequiredArgsConstructor;
 import org.identifiers.cloud.ws.linkchecker.channels.Publisher;
 import org.identifiers.cloud.ws.linkchecker.data.models.FlushHistoryTrackingDataMessage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +17,10 @@ import org.springframework.stereotype.Component;
  * ---
  */
 @Component
+@RequiredArgsConstructor
 public class FlushHistoryTrackingDataPublisher extends Publisher<String, FlushHistoryTrackingDataMessage> {
-    @Autowired
-    private RedisTemplate<String, FlushHistoryTrackingDataMessage> flushHistoryTrackingDataMessageRedisTemplate;
-
-    @Autowired
-    private ChannelTopic channelTopicFlushHistoryTrackingData;
+    private final RedisTemplate<String, FlushHistoryTrackingDataMessage> flushHistoryTrackingDataMessageRedisTemplate;
+    private final ChannelTopic channelTopicFlushHistoryTrackingData;
 
     @Override
     protected ChannelTopic getChannelTopic() {

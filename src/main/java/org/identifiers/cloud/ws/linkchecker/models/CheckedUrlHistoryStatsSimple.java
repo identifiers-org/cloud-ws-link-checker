@@ -18,9 +18,9 @@ import java.util.List;
 public class CheckedUrlHistoryStatsSimple implements CheckedUrlHistoryStats, Serializable {
     private static final Logger logger = LoggerFactory.getLogger(CheckedUrlHistoryStatsSimple.class);
     // Number of events where the checked URL was considered to be up
-    private int nUpEvents = 0;
+    private long nUpEvents = 0;
     // Number of events where the checked URL was considered to be down
-    private int nDownEvents = 0;
+    private long nDownEvents = 0;
 
     public CheckedUrlHistoryStatsSimple() {
         logger.info("CheckedUrlHistoryStatsSimple instantiated");
@@ -46,11 +46,11 @@ public class CheckedUrlHistoryStatsSimple implements CheckedUrlHistoryStats, Ser
     }
 
     @Override
-    public double getUpPercentage() {
-        int nEvents = nDownEvents + nUpEvents;
+    public float getUpPercentage() {
+        long nEvents = nDownEvents + nUpEvents;
         if (nEvents == 0) {
-            return 50.0;
+            return 50.0f;
         }
-        return(nUpEvents * 100.0) / nEvents;
+        return (nUpEvents * 100.0f) / nEvents;
     }
 }
